@@ -1,7 +1,8 @@
 # Installing the macOS virtual camera plug-in
 
-> 🚧 The plug-in itself isn't built yet — this document describes the intended
-> install flow so the user-facing UX is clear before we start writing code.
+> **Status: Phase 1A.** The plug-in builds and is loadable, but no
+> "TrussC Virtual Camera" appears in apps yet — that's Phase 1B (CMIO Device/
+> Stream object publishing).
 
 ## Overview
 
@@ -9,16 +10,24 @@ On macOS, a virtual camera is a **CoreMediaIO DAL Plug-In**: a `.plugin` bundle
 that the OS loads into every process that opens a camera. It must live in:
 
 ```
-/Library/CoreMediaIO/Plug-Ins/DAL/TrussCVirtualCam.plugin
+/Library/CoreMediaIO/Plug-Ins/DAL/TrussCVirtualCamDAL.plugin
 ```
 
 This is a system path, so installing it requires `sudo`.
 
-## Install
+## Build & install
 
 ```bash
-# From the TrussC addon directory:
-sudo cp -R build/TrussCVirtualCam.plugin /Library/CoreMediaIO/Plug-Ins/DAL/
+# From the addon root:
+./scripts/build_plugin_mac.sh           # builds platform/mac/plugin/build/TrussCVirtualCamDAL.plugin
+./scripts/install_plugin_mac.sh         # sudo cp into /Library/CoreMediaIO/Plug-Ins/DAL/
+```
+
+If you'd rather do it by hand:
+
+```bash
+sudo cp -R platform/mac/plugin/build/TrussCVirtualCamDAL.plugin \
+           /Library/CoreMediaIO/Plug-Ins/DAL/
 ```
 
 There's no daemon to start — every camera-consuming app that launches *after*
@@ -27,7 +36,9 @@ the copy will see "TrussC Virtual Camera" in its device list.
 ## Uninstall
 
 ```bash
-sudo rm -rf /Library/CoreMediaIO/Plug-Ins/DAL/TrussCVirtualCam.plugin
+./scripts/uninstall_plugin_mac.sh
+# or:
+sudo rm -rf /Library/CoreMediaIO/Plug-Ins/DAL/TrussCVirtualCamDAL.plugin
 ```
 
 ## Known compatibility caveats
