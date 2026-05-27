@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Info.plist for the Camera Extension target.
+
+    Forking? Change CFBundleIdentifier (and the matching value in the Xcode
+    target setting + signing) and CFBundleDisplayName. Everything else is
+    boilerplate.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleDisplayName</key>
+    <string>TrussC Virtual Cam Extension</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>SYSX</string>
+    <key>CFBundleShortVersionString</key>
+    <string>0.1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>12.3</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>MIT License</string>
+
+    <!--
+        The NSExtension dictionary is what tells launchd this binary is a
+        CameraExtension System Extension. CMIOExtensionMachServiceName is
+        OPTIONAL and only used if we want to expose a side-channel; for
+        Phase 2B the OS-installed Mach service is plenty.
+    -->
+    <key>NSExtension</key>
+    <dict>
+        <key>NSExtensionPointIdentifier</key>
+        <string>com.apple.cmio.CMIOExtensionProvider</string>
+        <key>NSExtensionPrincipalClass</key>
+        <string>$(PRODUCT_MODULE_NAME).TCVProviderSource</string>
+    </dict>
+</dict>
+</plist>
