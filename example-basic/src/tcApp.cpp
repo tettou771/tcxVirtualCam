@@ -69,7 +69,7 @@ void tcApp::draw() {
         pushStyle();
         setColor(0.1, 0, 0.5, 0.5);
         fill();
-        drawRectSquircle(-300, -80, 600, 160, 80);
+        drawRectSquircle(-250, -70, 500, 140, 70);
         setColor(1);
         setTextAlign(Center, Center);
         drawBitmapString("TrussC Virtual Cam", 0, 0, 3.0f);
