@@ -1,0 +1,14 @@
+{
+  "description": "Virtual camera output for TrussC (appear as a webcam in other apps)",
+  "author": "tettou771",
+  "license": "MIT",
+  "category": "video",
+  "keywords": [
+    "virtual-camera",
+    "webcam",
+    "video",
+    "output",
+    "snapcamera",
+    "obs"
+  ]
+}
