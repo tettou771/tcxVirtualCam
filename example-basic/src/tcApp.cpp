@@ -4,11 +4,43 @@
 using namespace tcx;
 
 static VirtualCam vcam;
-static Fbo fbo;
-static bool camReady = false;
+static Fbo      fbo;
+static Mesh     cube;
+static Texture  barsTex;
+static EasyCam  cam;
+static bool     camReady = false;
+
+// SMPTE-ish 7-bar color pattern at the texture resolution we want
+static Pixels buildColorBars(int w, int h) {
+    static const Color bars[7] = {
+        Color(0.75f, 0.75f, 0.75f),  // grey
+        Color(0.75f, 0.75f, 0.00f),  // yellow
+        Color(0.00f, 0.75f, 0.75f),  // cyan
+        Color(0.00f, 0.75f, 0.00f),  // green
+        Color(0.75f, 0.00f, 0.75f),  // magenta
+        Color(0.75f, 0.00f, 0.00f),  // red
+        Color(0.00f, 0.00f, 0.75f),  // blue
+    };
+    Pixels p;
+    p.allocate(w, h, 4);
+    for (int y = 0; y < h; ++y) {
+        for (int x = 0; x < w; ++x) {
+            int idx = (x * 7) / w;
+            p.setColor(x, y, bars[idx]);
+        }
+    }
+    return p;
+}
 
 void tcApp::setup() {
     fbo.allocate(960, 600);
+
+    cube = createBox(140.0f);
+    Pixels barsPx = buildColorBars(256, 256);
+    barsTex.allocate(barsPx);
+
+    cam.setDistance(380.0f);
+
     camReady = vcam.setup("TrussC Virtual Camera", 960, 600);
     vcam.setFrameRate(30);
 }
@@ -17,35 +49,47 @@ void tcApp::update() {
 }
 
 void tcApp::draw() {
-    // Render scene into FBO (this is what gets shipped out as the camera feed)
     fbo.begin();
-    clear(colors::navy);
+    clear(0.07f, 0.08f, 0.11f);
 
-    setColor(colors::cornflowerBlue);
-    pushMatrix();
-    translate(fbo.getWidth() / 2.0f, fbo.getHeight() / 2.0f);
-    rotate(getElapsedTimef() * 0.3f);
-    drawRect(-120, -120, 240, 240);
-    popMatrix();
+    cam.begin();
+        pushMatrix();
+        float t = getElapsedTimef();
+        rotateY(t * 0.6f);
+        rotateX(t * 0.4f);
+        setColor(1);
+        cube.draw(barsTex);
+        popMatrix();
+    cam.end();
 
-    setColor(1);
-    drawBitmapString("tcxVirtualCam - " + to_string((int)getFrameRate()) + " fps", 20, 20);
-    fbo.end();
-
-    // Ship the frame to the virtual camera (no-op until a backend is wired in)
-    if (camReady) {
-        vcam.send(fbo);
+    // Big title overlay
+    {
+        pushMatrix();
+        translate(fbo.getWidth() / 2, fbo.getHeight() / 2);
+        pushStyle();
+        setColor(0.1, 0, 0.5, 0.5);
+        fill();
+        drawRectSquircle(-300, -80, 600, 160, 80);
+        setColor(1);
+        setTextAlign(Center, Center);
+        drawBitmapString("TrussC Virtual Cam", 0, 0, 3.0f);
+        popStyle();
+        popMatrix();
     }
 
-    // Mirror to the window so you can see what consumers would see
+    // Small status footer
+    string status = camReady
+        ? "sending - " + to_string((int)getFrameRate()) + " fps"
+        : "backend unavailable (stub mode)";
+    drawBitmapString(status, 40, fbo.getHeight() - 30);
+    fbo.end();
+
+    // Ship to virtual camera (no-op until backend lands)
+    if (camReady) vcam.send(fbo);
+
+    // Mirror to window so the dev can see what consumers would see
     clear(0.12f);
     fbo.draw(0, 0);
-
-    setColor(1);
-    string status = camReady
-        ? "VirtualCam: " + vcam.getName() + " (sending)"
-        : "VirtualCam: backend unavailable (stub mode)";
-    drawBitmapString(status, 20, getWindowHeight() - 20);
 }
 
 void tcApp::keyPressed(int key) {}
