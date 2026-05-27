@@ -1,45 +1,42 @@
-# macOS backend
+# macOS backend (CMIOExtension)
 
-CoreMediaIO DAL Plug-In implementation.
+The macOS virtual camera is implemented as a **System Extension** using the
+modern `CMIOExtension` API. The legacy `CMIOHardwarePlugIn` (DAL) approach
+was abandoned because on macOS 14+ (and definitively on macOS 26) the cmio
+DAL assistant no longer loads third-party DAL bundles — so a DAL plug-in
+silently never appears in any consumer app's device list.
 
-## Current status: Phase 1A complete
-
-The bundle builds and exposes the required `TrussCVirtualCamFactory` entry
-symbol, but does **not** publish any CMIO Device/Stream objects yet. So
-installing it lets the cmio assistant load it without crashing, but no
-"TrussC Virtual Camera" device appears in any consumer app yet. That's
-Phase 1B.
-
-See [`../../docs/DESIGN.md`](../../docs/DESIGN.md) for the full roadmap.
+See [`../../docs/DESIGN.md`](../../docs/DESIGN.md) for the full architecture.
+For why we made the pivot, see the git history of that file
+(or check the parent commit of this one for the old DAL implementation).
 
 ## Layout
 
 ```
 mac/
-├── plugin/        # The .plugin bundle (installs to /Library/CoreMediaIO/Plug-Ins/DAL/)
-│   ├── CMakeLists.txt
-│   ├── Info.plist.in
-│   ├── PlugInMain.mm          # Factory + IUnknown + CMIO vtable stubs
-│   └── build/                 # CMake output, ignored
-├── host/          # (Phase 2) Code linked into the host TrussC app
-└── shared/        # (Phase 2) Message format shared by both processes
+├── extension/         # The Camera Extension (.systemextension). Swift.
+├── installer/         # Container .app the user double-clicks to install.
+├── host-bridge/       # ObjC++ XPC client linked into TrussC user apps.
+└── shared/            # XPC protocol & Mach service name, common to both sides.
 ```
 
-## Build & install
+Each subdirectory has its own README with the role and current status.
 
-```bash
-# From the addon root:
-./scripts/build_plugin_mac.sh
-./scripts/install_plugin_mac.sh        # sudo cp into /Library/CoreMediaIO/Plug-Ins/DAL/
-./scripts/uninstall_plugin_mac.sh      # remove
+## Build flow (planned)
+
+```
+host-bridge/    →  built by the addon's CMakeLists, links into user TrussC apps
+extension/      →  built by xcodebuild as part of the installer .app
+installer/      →  built by xcodebuild, embeds the extension, this is the
+                   shippable artifact for GitHub Releases
+shared/         →  headers only; included by host-bridge AND extension
 ```
 
-## Watching plug-in logs
+A top-level `scripts/build_release_mac.sh` will (later) produce
+`TrussC VirtualCam.app.zip` ready to upload as a release asset.
 
-The plug-in runs inside other processes (Zoom, Photo Booth, browsers, …) so
-stdout/stderr is useless. Logging goes to `os_log` under the subsystem
-`org.trussc.virtualcam`. To stream:
+## Fork-friendliness
 
-```bash
-log stream --predicate 'subsystem == "org.trussc.virtualcam"'
-```
+All product naming (display name, bundle IDs, Mach service name, factory
+UUID) flow from a single config file (created alongside Phase 2A) so a
+fork can rename the virtual camera with one edit instead of a sweep.

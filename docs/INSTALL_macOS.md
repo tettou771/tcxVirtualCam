@@ -1,81 +1,59 @@
-# Installing the macOS virtual camera plug-in
+# Installing on macOS
 
-> **Status: Phase 1A.** The plug-in builds and is loadable, but no
-> "TrussC Virtual Camera" appears in apps yet — that's Phase 1B (CMIO Device/
-> Stream object publishing).
+> **Status: planned.** The installer `.app` referenced in this document
+> doesn't exist yet (Phase 2C). For now this file describes the *intended*
+> install flow so the UX is clear ahead of time.
 
-## Overview
+## End-user install
 
-On macOS, a virtual camera is a **CoreMediaIO DAL Plug-In**: a `.plugin` bundle
-that the OS loads into every process that opens a camera. It must live in:
+1. Download `TrussC VirtualCam.app.zip` from the
+   [Releases](https://github.com/tettou771/tcxVirtualCam/releases) page.
+2. Unzip; drag `TrussC VirtualCam.app` into `/Applications`.
+3. Open the app. It triggers an `OSSystemExtensionRequest` and macOS shows:
+   - A standard System Settings prompt asking you to approve the system
+     extension (Privacy & Security pane).
+   - After approving, the extension activates and the virtual camera
+     becomes visible to other apps.
+4. Re-open Zoom / Photo Booth / your browser; "TrussC Virtual Cam" now
+   shows up in the camera picker.
 
-```
-/Library/CoreMediaIO/Plug-Ins/DAL/TrussCVirtualCamDAL.plugin
-```
+The `.app` itself can stay in `/Applications` (it doubles as an
+uninstaller and status panel) or be deleted — the extension keeps running
+either way.
 
-This is a system path, so installing it requires `sudo`.
+## Uninstalling
 
-## Build & install
-
-```bash
-# From the addon root:
-./scripts/build_plugin_mac.sh           # builds platform/mac/plugin/build/TrussCVirtualCamDAL.plugin
-./scripts/install_plugin_mac.sh         # sudo cp into /Library/CoreMediaIO/Plug-Ins/DAL/
-```
-
-If you'd rather do it by hand:
-
-```bash
-sudo cp -R platform/mac/plugin/build/TrussCVirtualCamDAL.plugin \
-           /Library/CoreMediaIO/Plug-Ins/DAL/
-```
-
-There's no daemon to start — every camera-consuming app that launches *after*
-the copy will see "TrussC Virtual Camera" in its device list.
-
-## Uninstall
+Run `TrussC VirtualCam.app` and click "Uninstall", **or** from a terminal:
 
 ```bash
-./scripts/uninstall_plugin_mac.sh
-# or:
-sudo rm -rf /Library/CoreMediaIO/Plug-Ins/DAL/TrussCVirtualCamDAL.plugin
+systemextensionsctl list                                # see installed extensions
+systemextensionsctl uninstall <team-id> <bundle-id>     # remove ours
 ```
 
-## Known compatibility caveats
+## Developer (running unsigned local builds)
 
-Some applications run with **Hardened Runtime + Library Validation**, which
-refuses to load DAL plug-ins not signed by the same Team ID as the host app.
-Apps known to be affected:
-
-- Safari (sometimes — depends on macOS version)
-- FaceTime, QuickTime Player (Apple's own apps, signed by Apple)
-- Some Electron apps with explicit hardening
-
-Apps that typically **work** with unsigned DAL plug-ins:
-
-- Zoom, Google Meet (in Chrome/Firefox), Discord
-- OBS Studio
-- Photo Booth (varies by macOS version)
-- Chromium-based browsers
-
-If a target app doesn't see the camera, that's usually the cause — it's not a
-TrussC bug, it's macOS's signing policy. The fix is either to sign the plug-in
-with a Developer ID, or to use a different consumer app.
-
-## Permissions
-
-After install, the **first** app you point at the virtual camera may trigger
-the standard macOS camera permission prompt (TCC). That's normal — grant it
-once per consumer app, as usual.
-
-## Removing the OS cache
-
-If you reinstall the plug-in and an app keeps showing the old version, the
-DAL daemon may be caching:
+If you're modifying this addon and want to install your own local build of
+the extension without paying for a Developer ID, you can use **System
+Extension developer mode**:
 
 ```bash
-# Restart the CoreMediaIO assistant
-sudo killall -9 'cmio*' 2>/dev/null || true
+# Once per machine, requires reboot:
+sudo systemextensionsctl developer on
+
+# Build + run the installer .app:
+./scripts/build_extension_mac.sh
+open ./platform/mac/installer/build/Debug/TrussC\ VirtualCam.app
 ```
 
-…and relaunch the consumer app.
+Developer mode loosens the signature requirements so an Apple ID Personal
+Team signature is enough. **Don't leave it on for production machines** —
+it weakens the System Extension security posture.
+
+## Why this is so much more involved than the old DAL approach
+
+macOS has retired the old DAL plug-in path. Pre-macOS-14 you could `sudo cp`
+an unsigned `.plugin` into `/Library/CoreMediaIO/Plug-Ins/DAL/` and be
+done. From macOS 14 onward (and definitively on macOS 26) the DAL
+assistant doesn't even load third-party DAL plug-ins, so the modern
+Camera Extension path is the only one that works. That path is
+signed-by-design.

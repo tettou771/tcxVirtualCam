@@ -2,53 +2,87 @@
 
 Virtual camera output for [TrussC](https://github.com/TrussC-org/TrussC).
 
-Make your TrussC app appear as a webcam to other applications (Zoom, Discord, OBS, browsers, etc.) — useful for building **SnapCamera-style effect apps**, live VJ feeds, presentation overlays, and the like.
+Make your TrussC app appear as a webcam to other applications (Zoom, Discord,
+OBS, browsers, …) — useful for building **SnapCamera-style effect apps**,
+live VJ feeds, presentation overlays, and the like.
 
-> **Status: 🚧 Work in progress** — early prototype, macOS only at this stage. API and IPC format are unstable.
-
-## Features (planned)
-
-- **Send-only** (output) for now. Reception is left to the host OS's standard camera APIs.
-- Cross-platform virtual camera backends:
-  - **macOS** — CoreMediaIO DAL Plug-In
-  - **Windows** — DirectShow Source Filter *(planned)*
-  - **Linux** — `v4l2loopback` *(planned)*
-- Sender API mirroring `tcxNDI` for familiarity:
-  ```cpp
-  tcx::VirtualCam vcam;
-  vcam.setup("My TrussC Cam", 1280, 720);
-  vcam.setFrameRate(30);
-  // in draw():
-  vcam.send(fbo);
-  ```
-- GPU-side RGBA → NV12 / YUYV conversion (planned, to keep 60fps at 1080p).
+> **Status: 🚧 Early development.** macOS only at this stage, and not yet
+> functional end-to-end. The API is unstable. See [`docs/DESIGN.md`](docs/DESIGN.md)
+> for the roadmap.
 
 ## Status by platform
 
-| Platform | Backend | Status |
+| Platform | Mechanism | Status |
 |---|---|---|
-| macOS | CoreMediaIO DAL Plug-In | 🚧 In development |
+| macOS | Camera Extension (CMIOExtension) | 🚧 In development (Phase 2A) |
 | Windows | DirectShow Source Filter | ⏳ Not started |
 | Linux | v4l2loopback | ⏳ Not started |
 
-See [docs/DESIGN.md](docs/DESIGN.md) for the architecture and roadmap.
+## Sketch of the API
 
-## Caveats
+```cpp
+#include <TrussC.h>
+#include <tcxVirtualCam.h>
+using namespace tc;
+using namespace tcx;
 
-- **No code signing assumed.** This is a personal/野良 addon — each user is responsible for any signing requirements their OS or app stack imposes.
-- macOS DAL Plug-Ins are **deprecated in favor of CoreMediaIO Camera Extensions**. We start with DAL because it requires no Developer ID and no notarization; a Camera Extension backend may be added later.
-- Some applications (notably Apple's own apps using `AVCaptureDevice` with hardened runtime) may refuse to load unsigned DAL plug-ins. See [docs/INSTALL_macOS.md](docs/INSTALL_macOS.md).
+VirtualCam vcam;
 
-## Install
+tcApp::setup() {
+    vcam.setup("My TrussC Cam", 1280, 720);
+    vcam.setFrameRate(30);
+}
 
-This addon is consumed via [trusscli](https://github.com/TrussC-org/TrussC):
+tcApp::draw() {
+    fbo.begin();
+        // ... draw stuff ...
+    fbo.end();
+    vcam.send(fbo);            // ships the FBO out as a webcam feed
+}
+```
+
+In stub mode (current state, until the macOS backend lands), `vcam.send(...)`
+is a no-op — your app compiles and runs unchanged.
+
+## Install (end-user, planned)
+
+A signed installer `.app` will be published on
+[Releases](https://github.com/tettou771/tcxVirtualCam/releases) once Phase 2C
+is done. The user flow is:
+
+1. Download `TrussC VirtualCam.app.zip` from Releases.
+2. Unzip, drag into `/Applications`.
+3. Run it once — System Settings prompts to approve the system extension.
+4. From now on, any TrussC app that uses `tcxVirtualCam` can output to the
+   shared "TrussC Virtual Cam" device. No per-app signing required.
+
+## Use as a TrussC addon
 
 ```bash
 trusscli addon clone tcxVirtualCam
 trusscli addon add tcxVirtualCam
 ```
 
-For the macOS plug-in installation steps (one-time `sudo cp` into `/Library/CoreMediaIO/Plug-Ins/DAL/`), see [docs/INSTALL_macOS.md](docs/INSTALL_macOS.md).
+The addon library is header-only on the public API side and only adds a
+small ObjC++ bridge on macOS (which talks XPC to the Camera Extension).
+
+## Forking (planned)
+
+Want your own differently-named virtual camera (e.g., "MyApp Cam")?
+That's the intended use case for forking this repo. A single config file
+at the repo root will hold all the product naming / bundle IDs / Mach
+service names, and the build system will substitute them everywhere.
+Phase 2D introduces that config; until then, naming is hardcoded.
+
+## Caveats
+
+- **Code signing on macOS.** The Camera Extension and its installer `.app`
+  must be signed for distribution. tettou771's Developer ID is used for
+  the official builds; forks need their own. Local development works with
+  a free Apple ID (Personal Team) + `systemextensionsctl developer on`.
+- **One device per machine, currently.** Multiple TrussC apps share the
+  same "TrussC Virtual Cam" channel. Multi-device support is not on the
+  near-term roadmap.
 
 ## License
 
