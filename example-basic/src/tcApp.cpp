@@ -95,11 +95,11 @@ void tcApp::draw() {
 void tcApp::keyPressed(int key) {}
 void tcApp::keyReleased(int key) {}
 
-void tcApp::mousePressed(Vec2 pos, int button) {}
-void tcApp::mouseReleased(Vec2 pos, int button) {}
-void tcApp::mouseMoved(Vec2 pos) {}
-void tcApp::mouseDragged(Vec2 pos, int button) {}
-void tcApp::mouseScrolled(Vec2 delta) {}
+void tcApp::mousePressed(const MouseEventArgs& e) {}
+void tcApp::mouseReleased(const MouseEventArgs& e) {}
+void tcApp::mouseMoved(const MouseEventArgs& e) {}
+void tcApp::mouseDragged(const MouseEventArgs& e) {}
+void tcApp::mouseScrolled(const ScrollEventArgs& e) {}
 
 void tcApp::windowResized(int width, int height) {}
 void tcApp::filesDropped(const vector<string>& files) {}
