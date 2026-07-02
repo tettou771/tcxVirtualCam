@@ -20,7 +20,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace tcx {
+namespace tcx::virtualcam {
 
 class VirtualCam {
 public:
@@ -118,8 +118,18 @@ private:
     std::vector<unsigned char> pixelBuffer_;
 };
 
-} // namespace tcx
+} // namespace tcx::virtualcam
 
 // Pull in the stub definitions while the platform backends are still TBD.
 // Once a backend exists, the platform .mm/.cpp will define these instead.
 #include "tcxVirtualCamStub.h"
+
+// -----------------------------------------------------------------------------
+// Backward compatibility. The canonical namespace is now `tcx::virtualcam`.
+// These silent aliases keep older code compiling: flat `tcx::VirtualCam` and
+// legacy `trussc::VirtualCam`. DEPRECATED — removed in v1.0.0.
+// (No [[deprecated]] attribute: under the usual `using namespace tc;` it would
+//  warn on idiomatic unqualified use too. See tcxVirtualCam README for migration.)
+// -----------------------------------------------------------------------------
+namespace tcx    { using virtualcam::VirtualCam; } // deprecated: remove at v1.0.0
+namespace trussc { using tcx::virtualcam::VirtualCam; } // deprecated: remove at v1.0.0

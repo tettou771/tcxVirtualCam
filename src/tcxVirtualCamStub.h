@@ -15,7 +15,7 @@
 
 #include "tcxVirtualCamSender.h"
 
-namespace tcx {
+namespace tcx::virtualcam {
 
 #ifndef TCX_VIRTUALCAM_HAS_BACKEND
 
@@ -36,4 +36,4 @@ inline bool VirtualCam::sendBackend(const unsigned char* /*rgba*/,
 
 #endif // TCX_VIRTUALCAM_HAS_BACKEND
 
-} // namespace tcx
+} // namespace tcx::virtualcam

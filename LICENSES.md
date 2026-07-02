@@ -1,3 +1,7 @@
+# tcxVirtualCam Licenses
+
+## tcxVirtualCam
+
 MIT License
 
 Copyright (c) 2026 tettou771
@@ -19,3 +23,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+<!--
+  The macOS DAL / CMIO camera extension under platform/mac/extension/ is
+  original Swift written for this addon (it follows Apple's "Camera Extension"
+  Xcode template workflow but bundles no copied third-party source). If a future
+  backend vendors third-party code, add a `---`-separated section per component
+  here with its origin (repo / version / how to update) and its own license.
+-->
